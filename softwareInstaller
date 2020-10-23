@@ -1,0 +1,403 @@
+import tkinter as tk 
+from tkinter import *
+from tkinter.ttk import Progressbar
+from tkinter.ttk import *
+import tkinter.font as tkFont
+from tkinter import simpledialog
+import os
+import platform
+import time
+import paramiko
+from PIL import ImageTk, Image
+
+ip_list_count=0
+ip = []
+progressDict={}
+progressEveryPercent=2
+
+for i in range(0,101):
+    if i%progressEveryPercent==0:
+        progressDict[str(i)]=""
+
+NORM_FONT= ("Verdana", 10)
+
+def popupmsg(msg):
+    popup = tk.Tk()
+    popup.wm_title("Warning !!!")
+    label = Label(popup, width=20, text=msg, font=(NORM_FONT),anchor="center")
+    label.pack(side="top", fill="x", pady=10)
+    B1 = ttk.Button(popup, text="Okay", command = popup.destroy)
+    B1.pack(pady=10)
+    popup.mainloop()
+        
+class SampleApp(tk.Tk):
+
+    def __init__(self, *args, **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
+
+        self.title_font = tkFont.Font(family='Times New Roman', size=20)
+        self.title("V2oIP Release Installer")
+        self.geometry("670x610")
+        
+        container = tk.Frame(self)        
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+        for F in (StartPage, PageOne, PageTwo):
+            page_name = F.__name__
+            frame = F(parent=container, controller=self)
+            self.frames[page_name] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.show_frame("StartPage")
+
+    def show_frame(self, page_name):
+        '''Show a frame for the given page name'''
+        frame = self.frames[page_name]
+        frame.tkraise()
+        
+    def quit(self):
+        self.destroy()
+    
+
+class StartPage(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        
+        #-----------------------------------------------------------------------------------------------------
+        top_label = tk.Label(self, text="V2oIP Release Installer\nVersion 1.1", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        top_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(top_label, top_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        top_label.configure(font=f)
+        
+        img = Image.open("/home/sahil/ml/cdot_logo.png")
+        img = img.resize((60,80),Image.ANTIALIAS)
+        my_img = ImageTk.PhotoImage(img)
+        panel = tk.Label(top_label, image = my_img)
+        panel.image = my_img
+        panel.pack(anchor='e')
+        
+        #-------------------------------------------------------------------------------------------------
+        mid_label = tk.Label(self, text="Step 1: Release Number Verification", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        mid_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(mid_label, mid_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        mid_label.configure(font=f)
+        
+        #------------------------------------------------------------------------------------------------        
+        low_label = tk.Label(self, text="CV2IP RELEASE 1.1 shall be installed.\n Press Next to Continue, Else Quit. !!", borderwidth=2, relief="raised",width=20, height=20, font=controller.title_font)
+        low_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(low_label, low_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        low_label.configure(font=f)
+        
+        
+
+        bottom_label = tk.Label(self, borderwidth=2, relief="flat",width=20, height=3)
+        bottom_label.pack(anchor='s',fill="x")
+        button1 = tk.Button(bottom_label, text="Next",fg="white",bg="black", width=10, command=lambda: controller.show_frame("PageOne"))
+        button2 = tk.Button(bottom_label, text="Quit",fg="white",bg="black",width=10,command=lambda: controller.quit())
+        button1.pack(side="right",anchor='s',padx=5,pady=10)
+        button2.pack(side="right",anchor='s',padx=5,pady=10)
+                            
+    
+class PageOne(tk.Frame):
+        
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        
+        top_label = tk.Label(self, text="V2oIP Release Installer\nVersion 1.1", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        top_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(top_label, top_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        top_label.configure(font=f)
+        
+        img = Image.open("/home/sahil/ml/cdot_logo.png")
+        img = img.resize((60,80),Image.ANTIALIAS)
+        my_img = ImageTk.PhotoImage(img)
+        panel = tk.Label(top_label, image = my_img)
+        panel.image = my_img
+        panel.pack(anchor='e')
+        
+        #--------------------------------------------------------------------------------------------------
+    
+        mid_label = tk.Label(self, text="Step 2: Enter IP List( in new lines )", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        mid_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(mid_label, mid_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        mid_label.configure(font=f)
+        
+        #------------------------------------------------------------------------------------------------    
+        
+        low_label = tk.Label(self, borderwidth=2, relief="raised",width=20, height=20)
+        low_label.pack(anchor='w',fill="x")
+        #f = Frame(low_label, width=30,height=30)
+        #f.pack()
+        
+        global t1 
+        t1 = Text(low_label, width=80,height=22,bg="white", fg="green")
+        t1.pack(side="left",padx=2,pady=5)
+        s1 = Scrollbar(low_label)
+        s1.pack(side="right", fill="y")
+        s1.config(command=t1.yview)
+        t1.config(yscrollcommand=s1.set)
+        
+                
+        bottom_label = tk.Label(self, borderwidth=2, relief="flat",width=20, height=3)
+        bottom_label.pack(anchor='s',fill="x")
+        button1 = tk.Button(bottom_label, text="Next",fg="white",bg="black", width=10, command=self.get_ips)
+        button2 = tk.Button(bottom_label, text="Back",fg="white",bg="black",width=10,command=lambda: controller.show_frame("StartPage"))
+        button1.pack(side="right",anchor='s',padx=5,pady=10)
+        button2.pack(side="right",anchor='s',padx=5,pady=10) 
+        
+    def get_ips(self):
+        print( "\nenetered here page one" )
+         
+        global ip
+        global t1
+        ip = t1.get("1.0",'end-1c').split('\n')
+        print (ip)
+        t1.delete("1.0",END)
+        
+        global ip_list_count
+        ip_list_count = len(ip)
+        print("ip_list_count +", ip_list_count)
+        
+        if(ip_list_count==0):
+            popupmsg("IP list is empty")
+        else:
+            print("\n\nahil is here")
+            self.controller.show_frame("PageTwo")
+        
+       
+            
+
+class PageTwo(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller      
+        
+        
+        top_label = tk.Label(self, text="V2oIP Release Installer\nVersion 1.1", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        top_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(top_label, top_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        top_label.configure(font=f)
+        
+        img = Image.open("/home/sahil/ml/cdot_logo.png")
+        img = img.resize((60,80),Image.ANTIALIAS)
+        my_img = ImageTk.PhotoImage(img)
+        panel = tk.Label(top_label, image = my_img)
+        panel.image = my_img
+        panel.pack(anchor='e')
+        
+        #--------------------------------------------------------------------------------------------------
+    
+        mid_label = tk.Label(self, text="Step3: Installing Release", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        mid_label.pack(anchor='w',fill="x")
+        f = tkFont.Font(mid_label, mid_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        mid_label.configure(font=f)
+        
+        #------------------------------------------------------------------------------------------------        
+        
+        self.mid_label1 = tk.Label(self, text="Step3: Installing Release", borderwidth=2, relief="raised",width=20, height=3, font=controller.title_font)
+        self.mid_label1.pack(anchor='w',fill="x")
+        f = tkFont.Font(self.mid_label1, mid_label.cget("font"))
+        f.configure(underline = True, size='12', weight="bold")
+        self.mid_label1.configure(font=f)
+        
+        self.low_label = tk.Label(self, borderwidth=2, relief="raised",width=20, height=20)
+        self.low_label.pack(anchor='w',fill="x")
+        #f = Frame(low_label, width=30,height=30)
+        #f.pack()
+        
+        
+        global t2
+        t2 = Text(self.low_label, width=80,height=17,bg="white", fg="green")
+        t2.pack(side="left",padx=2,pady=5)
+        s1 = Scrollbar(self.low_label)
+        s1.pack(side="right", fill="y")
+        s1.config(command=t1.yview)
+        t2.config(yscrollcommand=s1.set)
+        #t1.insert(END,"Press Install !!!")
+        
+                
+        bottom_label = tk.Label(self, borderwidth=2, relief="flat",width=20, height=3)
+        bottom_label.pack(anchor='s',fill="x")
+        button1 = tk.Button(bottom_label, text="Install",fg="white",bg="black", width=10,command=self.get_ips)
+        button2 = tk.Button(bottom_label, text="Back",fg="white",bg="black",width=10,command=lambda: controller.show_frame("PageOne"))
+        button1.pack(side="right",anchor='s',padx=5,pady=10)
+        button2.pack(side="right",anchor='s',padx=5,pady=10)
+        
+
+    def get_ips(self):
+        
+        global progress
+        s = Style()
+        s.theme_use('clam')
+        s.configure("blue.Horizontal.TProgressbar", foreground='orange', background='orange')
+        progress = Progressbar(self.mid_label1, style="blue.Horizontal.TProgressbar", orient="horizontal",length=500, mode="determinate")
+        progress["value"] = 0
+        progress.pack(padx=0,pady=30)
+        #progress.place(x=60, y=180)
+        
+        
+        #low_label = tk.Label(self, borderwidth=2, relief="raised",width=20, height=20)
+        #low_label.pack(anchor='w',fill="x")
+        #frame = Frame(low_label)
+        #frame.pack(fill="both", expand=True)
+        
+        
+        #global t2
+        #t2 = Text(self.low_label, width=80, height=15, bg="white", fg="green")
+        #t2.pack(side="left",fill="both")
+        #s = Scrollbar(self.low_label)
+        #s.pack(side="right", fill="y")
+        #link the text and scrollbar widgets
+        #s.config(command=t2.yview)
+        #t2.config(yscrollcommand=s.set)
+             
+        #frame = tk.Frame(low_label)
+        #frame.pack(fill="both", expand=True)
+        #global t2
+        #t2 = Text(frame, width=80, height=20, bg="white", fg="green")
+        #t2.pack(side="left",fill="both")
+        #s = Scrollbar(frame)
+        #s.pack(side="right", fill="y")
+        #link the text and scrollbar widgets
+        #s.config(command=t2.yview)
+        #t2.config(yscrollcommand=s.set)
+        #frame.pack(side="top",anchor='s',padx=20,pady=20)
+        
+        global ip_list_count
+        global ip
+        print("hi-->>>>",ip_list_count)
+        for i in range(0,ip_list_count):
+            print("ip == " + ip[i])
+            if(self.validate_ip_address(ip[i])):
+                print("in the if")
+                current_os = platform.system().lower()
+        
+                if current_os == "windows":
+                    parameter = "-n"
+                else:
+                    parameter = "-c"
+
+                exit_code = os.system(f"ping {parameter} 1 -w2 {ip[i]} > /dev/null 2>&1")
+        
+                if(exit_code==0):
+                    print("pinging")
+                    self.sftp(ip[i])
+                else:
+                    print("not pinging")
+        
+                
+            else:
+                print("in the else")
+                outF = open("failed_ip.txt", "a")
+                outF.write("\nError :: Not a valid IP :: " + ip[i])
+
+    
+    def validate_ip_address(self,IP):
+        
+        def isIPv4(s):
+            try: return str(int(s)) == s and 0 <= int(s) <= 255
+            except: return False
+        
+        if IP.count(".") == 3 and all(isIPv4(i) for i in IP.split(".")):
+            return True
+        
+        return False
+    
+    
+   
+        
+    def printProgressDecimal(self,x,y):
+        global progress
+        progress["maximum"] = y
+        if int(100*(int(x)/int(y))) % progressEveryPercent ==0 and progressDict[str(int(100*(int(x)/int(y))))]=="":
+           # print("{}% ({} Transfered(B)/ {} Total File Size(B))".format(str("%.2f" %(100*(int(x)/int(y)))),x,y))
+            progressDict[str(int(100*(int(x)/int(y))))]="1"
+            progress["value"] = x
+            self.update_idletasks()
+    
+    def simpledialog(self):
+        return simpledialog.askstring(title="Test", prompt="Please Enter the Password for :" , show="*")
+        
+
+    def sftp(self,target_ip):
+        print(target_ip)
+        
+            
+        host,port = target_ip,22
+        transport = paramiko.Transport((host,port))   
+        
+        
+        USER_INP = self.simpledialog()
+        
+        if(USER_INP is None):
+            print("Password is not entered")
+            
+        else:     
+            username,password = "root",USER_INP
+            transport.connect(None,username,password)
+            sftp = paramiko.SFTPClient.from_transport(transport)
+            filepath = "/tmp/upgrade.tar"
+            localpath = "/tmp/upgrade.tar"
+            global t1
+            t2.insert(END,"STEP1 :: Copying TAR to Remote Machine !!! \n")
+            t2.see(END)
+            t2.update_idletasks()
+            sftp.put(localpath,filepath,callback=lambda x,y: self.printProgressDecimal(x,y))
+
+
+            sftp.close()
+            t2.insert(END,"STEP2 :: TAR Successfully Copied !!! \n")
+            t2.see(END)
+            t2.update_idletasks() 
+
+            self.ssh_func(host)
+
+            t2.insert(END,"STEP 3 :: TAR Extraction COMPLETE !!! \n")
+            t2.see(END)
+            t2.update_idletasks()
+
+    
+    def ssh_func(self,host):
+        client=paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        com="cd /tmp \n tar -xvf upgrade.tar \n "
+        client.connect(host,22, username='root', password='root')
+        output=""
+        stdin, stdout, stderr = client.exec_command(com)
+        stdout=stdout.readlines()
+        client.close()
+
+        for line in stdout:
+            global t2
+            t2.insert(END,line)
+            t2.see(END)
+            t2.update_idletasks()
+
+        if output!="":
+            print (output)
+        else:
+            print ("There was no output for this command")
+    
+   
+
+if __name__ == "__main__":
+    try:
+        os.remove("failed_ip.txt")
+    except OSError:
+        pass
+    app = SampleApp()
+    app.mainloop()
