@@ -1,0 +1,5 @@
+This projects entails to develop a software Installer using Tkinter. 
+
+This installer takes a list of IPs of the CPE as input and install the release on the desired CPEs.
+
+CPE: Customer Premise Equipment
